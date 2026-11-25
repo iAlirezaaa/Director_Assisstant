@@ -11,6 +11,16 @@ on:
       - 'references.html'
       - 'offline-media.js'
       - 'camera-library.js'
+      - 'camera-models.js'
+      - 'motion-paths.json'
+      - 'motion-paths.js'
+      - 'legacy-motion-paths.js'
+      - 'studio.html'
+      - 'studio.js'
+      - 'models.html'
+      - 'lab.html'
+      - 'online-references.html'
+      - 'smoke_test.py'
 
 concurrency:
   group: camera-atlas-offline
@@ -34,16 +44,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install numpy opencv-python-headless
-      - name: Generate and verify all 66 local MP4 files
+      - name: Generate and verify all 177 local MP4 files
         run: python build_media.py
       - name: Build portable website
         run: |
           mkdir -p dist/media
-          cp index.html references.html camera-library.js offline-media.js README.md build_media.py dist/
+          cp index.html lab.html references.html online-references.html models.html studio.html studio.js camera-library.js camera-models.js offline-media.js motion-paths.js motion-paths.json legacy-motion-paths.js README.md build_media.py dist/
           cp media/*.mp4 dist/media/
           touch dist/.nojekyll
-          test "$(find dist/media -name '*.mp4' | wc -l)" -eq 66
+          test "$(find dist/media -name '*.mp4' | wc -l)" -eq 177
           (cd dist && zip -qr ../CameraAtlas-Offline.zip .)
+          cp CameraAtlas-Offline.zip dist/CameraAtlas-Offline.zip
+      - name: Browser smoke test
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+          python -m http.server 8765 --bind 127.0.0.1 --directory dist >/tmp/camera-atlas-http.log 2>&1 &
+          python smoke_test.py
       - name: Upload offline website ZIP
         uses: actions/upload-artifact@v4
         with:
@@ -57,7 +74,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- media/*.mp4
           if ! git diff --cached --quiet; then
-            git commit -m "Build 66 original offline camera-reference MP4 files"
+            git commit -m "Build 177 original offline camera-reference MP4 files"
             git push origin HEAD:main
           fi
       - name: Upload Pages artifact
