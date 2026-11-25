@@ -4,18 +4,23 @@ const AS=window.AssetImporter,AM=window.ATLAS_ASSET_MANIFEST,AB=window.ATLAS_ASS
 let activeTab="library",selectedTechnique=state.id,preview=null,lastOptics="",assetSerial=0;
 const E=(tag,txt,cls)=>{let e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e};
 const titleOf=r=>state.lang==="fa"?r.fa+" · "+r.en:r.en;
-function setTab(tab){
- if(!$("tab-"+tab))tab="library";
+function setTab(request){
+ const advanced={timing:"timingDetails",mix:"mixDetails",keys:"keysDetails",catalog:"catalogDetails"};
+ if(["scene","export","help"].includes(request)){
+  if(window.StudioUI)window.StudioUI.openTool(request);else window.studioPendingTool=request;
+  return;
+ }
+ const tab=advanced[request]?"library":["library","optics","transitions"].includes(request)?request:"library";
  activeTab=tab;
  document.querySelectorAll("[data-worktab]").forEach(e=>e.hidden=e.dataset.worktab!==tab);
- document.querySelectorAll("[data-tab]").forEach(e=>{const on=e.dataset.tab===tab;e.setAttribute("aria-selected",String(on));e.tabIndex=on?0:-1});
- if(tab==="timing")drawTimingGraph();
+ document.querySelectorAll("#workspaceTabs [data-tab]").forEach(e=>{const on=e.dataset.tab===tab;e.setAttribute("aria-selected",String(on));e.tabIndex=on?0:-1});
+ if(advanced[request]){$("advancedMotion").open=true;$(advanced[request]).open=true}
  if(tab==="optics"){refreshOpticsInputs();bodyCatalogOptions()}
  if(tab==="library")renderLibrary();
- if(tab==="scene")renderInstances();
  if(tab==="transitions")transitionControls();
  if(tab!=="library")$("localReference").pause();
  window.StudioUI?.onTab(tab);
+ if(request==="timing")drawTimingGraph();
 }
 for(let e of document.querySelectorAll("[data-tab]"))e.onclick=()=>setTab(e.dataset.tab);
 function categories(){return [["all",tr("همه دسته‌ها","All categories")],...Object.entries(D.categories).map(([id,n])=>[id,n[state.lang==="fa"?0:1]])]}
@@ -31,7 +36,7 @@ const normalizeSearch=s=>s.toLowerCase().replace(/[يى]/g,"ی").replace(/ك/g,"
 const librarySearchIndex=new Map(D.refs.map(r=>[r.id,normalizeSearch([r.en,r.fa,r.id,r.prompt].join(" "))]));
 let libraryFilter="all",libraryFavorites=new Set(),libraryRenderKey="";
 try{let saved=JSON.parse(localStorage.getItem("camera-studio-favorites")||"[]");if(Array.isArray(saved))libraryFavorites=new Set(saved.filter(id=>D.refs.some(r=>r.id===id)))}catch{}
-const motionGlyphs={move:'<path d="M3 17h18M5 13V7h9v6Zm9-4 5-2v6l-5-2"/>',tracking:'<path d="M3 18h18M6 14l3-8 5 2 3 8M5 6h3m9-2 3 3-3 3"/>',aerial:'<path d="m3 17 6-8 5 3 7-9M3 21h18m-2-18h2v3"/>',angle:'<path d="M3 18h18M5 18 17 6m-8 9a8 8 0 0 1 6 3"/>',lens:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',timing:'<path d="M3 20V4m0 16h18M4 17c9 0 6-11 16-11"/>',combined:'<path d="m12 3 9 5-9 5-9-5Zm-9 9 9 5 9-5m-18 5 9 5 9-5"/>',transition:'<rect x="2" y="5" width="13" height="14" rx="2"/><rect x="9" y="5" width="13" height="14" rx="2"/>',framing:'<path d="M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"/><circle cx="12" cy="12" r="3"/>'};
+const motionGlyphs={move:"video",tracking:"arrows-horizontal",aerial:"eye",angle:"video",lens:"aperture",timing:"clock",combined:"stack",transition:"transition-right",framing:"photo"};
 function renderLibrary(){
  const q=normalizeSearch($("libraryQuery").value),cat=$("libraryCat").value||"all";
  const rows=D.refs.filter(r=>(cat==="all"||r.cat===cat)&&(!q||librarySearchIndex.get(r.id).includes(q))&&(libraryFilter!=="paths"||!!refPath(r))&&(libraryFilter!=="favorites"||libraryFavorites.has(r.id)));
@@ -44,7 +49,7 @@ function renderLibrary(){
   for(const r of rows){
    const b=E("button",null,"library-card"),glyph=E("span",null,"motion-icon"),txt=E("span",null,"card-copy");
    b.type="button";b.dataset.techniqueId=r.id;
-   glyph.setAttribute("aria-hidden","true");glyph.innerHTML='<svg viewBox="0 0 24 24">'+(motionGlyphs[r.cat]||motionGlyphs.move)+'</svg>';
+   glyph.setAttribute("aria-hidden","true");const icon=E("img");icon.src="icons/"+(motionGlyphs[r.cat]||motionGlyphs.move)+".svg";icon.alt="";icon.className="icon";glyph.append(icon);
    txt.append(E("strong",tr(r.fa,r.en)));
    if(state.lang==="fa"){const en=E("span",r.en,"card-en");en.dir="ltr";txt.append(en)}
    txt.append(E("small",(refPath(r)?tr("مسیر سه‌بعدی","3D motion"):tr("دانشنامه","Technique guide"))+(libraryFavorites.has(r.id)?tr(" · پسندیده"," · Saved"):"")));
@@ -77,7 +82,7 @@ for(let [id,a,b] of [["aperture",.7,64],["focusDistance",.08,500],["coc",.001,.1
 function previewTarget(){if(preview)return preview;try{preview={raw:$("camera"),rawRender:renderCam,program:$("program"),compose:TE.compositor($("program")),b:null,bRender:null};$("camera").hidden=true;$("program").hidden=false}catch(e){preview={raw:$("camera"),rawRender:renderCam,program:$("program"),compose:null,b:null,bRender:null};$("camera").hidden=false;$("program").hidden=true;$("status").textContent=tr("رندر اپتیک/ترنزیشن در این مرورگر در دسترس نیست: ","Program compositor unavailable: ")+String(e)}return preview}
 function previewFrame(t,source,s,target){let cfg=s.transition||{id:"none"},enabled=cfg.id!=="none"&&PATHS[cfg.next]&&!!target.compose,tt=enabled?TE.timing(t,cfg.overlap):{a:t,b:0,mix:0},l=LE.profile(s),sa={...s,t:tt.a,capturePath:source},a=sample(tt.a,source,sa),ma=sceneMesh(a,sa),sb=null,b=null,mb=null;target.rawRender(ma,a,s.sensor,look(sa),l.squeeze);if(enabled&&tt.mix>0){if(!target.b){target.b=document.createElement("canvas");target.b.width=target.raw.width;target.b.height=target.raw.height;target.bRender=renderer(target.b)}if(target.b.width!==target.raw.width)target.b.width=target.raw.width;if(target.b.height!==target.raw.height)target.b.height=target.raw.height;sb={...s,scene:cfg.scene==="same"||!SETS.scenes[cfg.scene]?s.scene:cfg.scene,t:tt.b,capturePath:PATHS[cfg.next]};b=sample(tt.b,PATHS[cfg.next],sb);mb=sceneMesh(b,sb);target.bRender(mb,b,s.sensor,look(sb),l.squeeze)}if(target.compose)target.compose(target.raw,mb?target.b:target.raw,enabled?cfg.id:"none",tt.mix,l);return mb&&tt.mix>=.5?{c:b,mesh:mb,s:sb,source:PATHS[cfg.next]}:{c:a,mesh:ma,s:sa,source}}
 const transFa={none:"فقط شات A نمایش داده می‌شود.",cut:"تغییر ناگهانی تصویر از شات A به شات B.",dissolve:"محو تدریجی تصویر A و ظاهر شدن تصویر B.","fade-black":"ابتدا تصویر به سیاهی می‌رسد، سپس شات B ظاهر می‌شود.","fade-white":"تصویر از یک قاب سفید عبور می‌کند.","wipe-left":"تصویر B با مرزی افقی از راست آشکار می‌شود.","wipe-right":"تصویر B با مرزی افقی از چپ آشکار می‌شود.","wipe-up":"تصویر B از پایین به بالا آشکار می‌شود.","wipe-down":"تصویر B از بالا به پایین آشکار می‌شود.","wipe-diagonal":"تصویر B از پشت یک مرز مورب ظاهر می‌شود.","iris-in":"باز شدن ماسک دایره‌ای برای نمایش شات B.","iris-out":"جمع شدن ماسک دایره‌ای شات A.","push-left":"دو تصویر کنار هم به سمت چپ جابجا می‌شوند.","push-right":"دو تصویر کنار هم به سمت راست جابجا می‌شوند.","push-up":"دو تصویر به سمت بالا حرکت می‌کنند.","push-down":"دو تصویر به سمت پایین حرکت می‌کنند.","slide-left":"تصویر B روی تصویر ثابت A اسلاید می‌شود.","zoom-in":"بزرگ‌نمایی خروجی A و ادغام با B.","zoom-out":"تغییر اندازهٔ تصاویر در زمان ادغام.","whip-horizontal":"کشیدگی و جابه‌جایی افقی تقریبی بین دو شات.","whip-vertical":"کشیدگی و جابه‌جایی عمودی تقریبی بین دو شات.",spin:"چرخش قاب‌ها هنگام ادغام.",blur:"محو شدن تقریبی تصاویر در میانهٔ دیزالو.",flash:"فلش روشن بین دو تصویر.",pixel:"پیکسلی شدن در میانهٔ انتقال.",glitch:"جابه‌جایی نوارهای تصویر و جدایی رنگ.",split:"آشکار شدن تصویر B از مرکز قاب.",clock:"آشکار شدن تصویر B با قطاع چرخان.",checker:"آشکار شدن تدریجی کاشی‌های تصویر.","film-burn":"نشت نور گرم هنگام انتقال.",luma:"آشکارسازی تصویر B بر پایه روشنایی پیکسل.",match:"برش فوری؛ تطابق هندسه و ترکیب‌بندی دو شات باید جداگانه طراحی شود.","horizontal-blinds":"آشکارسازی تصویر B در نوارهای افقی.","vertical-blinds":"آشکارسازی تصویر B در نوارهای عمودی.",diamond:"باز شدن ماسک لوزی.",ripple:"اعوجاج موجی شعاعی هنگام دیزالو."};
-function transitionControls(){let c=state.transition;if(!c||!TE.byId[c.id])state.transition=c={id:"none",next:"orbit-180",scene:"same",overlap:.25};optionList($("transitionType"),TE.defs.map(d=>[d.id,tr(d.fa,d.en)]),c.id);optionList($("shotB"),D.refs.filter(r=>PATHS[r.id]).map(r=>[r.id,label(r)]),c.next);optionList($("sceneB"),[["same",tr("همان محیط A","Same environment")],...Object.entries(SETS.scenes).map(([k,v])=>[k,v[state.lang==="fa"?0:1]])],c.scene);$("transitionOverlap").value=c.overlap;$("transitionCount").textContent=(TE.defs.length-1)+" "+tr("ترنزیشن","transitions");transitionInfo()}
+function transitionControls(){let c=state.transition;if(!c||!TE.byId[c.id])state.transition=c={id:"none",next:"close",scene:"same",overlap:.25};optionList($("transitionType"),TE.defs.map(d=>[d.id,tr(d.fa,d.en)]),c.id);optionList($("shotB"),D.refs.filter(r=>PATHS[r.id]).map(r=>[r.id,label(r)]),c.next);optionList($("sceneB"),[["same",tr("همان محیط A","Same environment")],...Object.entries(SETS.scenes).map(([k,v])=>[k,v[state.lang==="fa"?0:1]])],c.scene);$("transitionOverlap").value=c.overlap;$("transitionCount").textContent=(TE.defs.length-1)+" "+tr("ترنزیشن","transitions");transitionInfo()}
 function transitionInfo(){let c=state.transition,d=TE.byId[c.id]||TE.defs[0],tt=TE.timing(.5,c.overlap);$("transitionTrack").style.gridTemplateColumns=tt.start+"fr "+(tt.end-tt.start)+"fr "+(1-tt.end)+"fr";$("transitionOverlapOut").textContent=(c.overlap*state.duration).toFixed(2)+" s / "+Math.round(c.overlap*100)+"%";$("transitionExplain").textContent=tr(transFa[d.id]||d.description,d.description);$("transitionPlayhead").style.left=(state.t*100)+"%"}
 for(let [id,k] of [["transitionType","id"],["shotB","next"],["sceneB","scene"],["transitionOverlap","overlap"]])$(id).oninput=()=>{state.transition[k]=id==="transitionOverlap"?Number($(id).value):$(id).value;state.playing=false;transitionInfo();draw();prompt()};
 $("previewTransition").onclick=()=>{state.t=0;state.playing=true;draw()};$("clearTransition").onclick=()=>{state.transition.id="none";state.t=0;state.playing=false;transitionControls();draw();prompt()};
@@ -105,6 +110,7 @@ $("frameGuides").onchange=()=>{$("guidesOverlay").hidden=!$("frameGuides").check
 function workspaceControls(){optionList($("presetCat"),categories(),$("presetCat").value||"all");optionList($("libraryCat"),categories(),$("libraryCat").value||"all");techHeader();if(activeTab==="library")renderLibrary();lensOptions();refreshOpticsInputs();transitionControls();assetOptions();bodyCatalogOptions();if(location.protocol==="file:")$("offlineBundle").hidden=true}
 function workspaceDraw(c){window.StudioUI?.onFrame(c);opticsMetrics(c);if(activeTab==="optics"&&!state.playing)bodyDetails();if(activeTab==="transitions"){$("transitionPlayhead").style.left=state.t*100+"%";$("transitionOverlapOut").textContent=(state.transition.overlap*state.duration).toFixed(2)+" s / "+Math.round(state.transition.overlap*100)+"%"}}
 if(p.has("id")&&D.refs.some(r=>r.id===p.get("id"))){selectedTechnique=p.get("id");if(PATHS[selectedTechnique]){state.id=selectedTechnique;path=copy(PATHS[state.id])}}if(p.has("q"))$("libraryQuery").value=p.get("q");if(p.has("cat"))optionList($("libraryCat"),categories(),p.get("cat"));
+if(!p.has("preset")&&!p.has("id"))path.timing={type:"smooth",scope:"shot",bezier:MT.defaultBezier.slice()};
 startStudio();setTab(p.get("tab")||"library");
 // An actual bundled character is loaded on first visit, without network. Keep procedural fallback on failure.
 if(AB["person-a"]&&state.subject==="hero"&&!state.instances.length){ensureAsset("person-a").then(()=>{if(state.subject==="hero"&&!state.instances.length){addInstance("person-a",AM.assets.find(a=>a.id==="person-a"),"subject");$("status").textContent=tr("مدل سه‌بعدی آمادهٔ محلی وارد شد.","Bundled 3D character imported.")}}).catch(e=>{$("assetInfo").textContent=String(e)})}

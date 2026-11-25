@@ -3,15 +3,26 @@
 A bilingual Persian/English, dependency-free cinematography learning and previs tool.
 
 
-## v0.7 — A clearer shot-design workspace
+## v0.8.0 — A guided first shot
 
-The current homepage opens the unified studio. It keeps the existing 302 techniques, 251 editable camera paths and original local reference clips, 97 body records, 81 lens profiles, 35 transitions, scene tools and exports.
+The homepage opens a six-second shot in the camera view. Three learning sections put the common decisions next to the preview, with short Persian/English explanations of what each choice does, when to use it and what to watch for.
 
-- **Preview and focus:** a clear current-shot heading, dedicated camera/scene/split views, an expandable focus mode, adjacent playback and time ruler, and guides fitted to the actual image rectangle for landscape, scope, square and portrait shots.
-- **Readable Persian UI:** bundled Vazirmatn variable font with its SIL OFL license, RTL-aware layouts, separated bilingual technique names, translated subject/instance controls, consistent fields, visible keyboard focus and a horizontal mobile tool strip.
-- **Faster browsing:** cached motion cards retain focus and scroll when selected; normalized Persian/Arabic letter search, all/3D/favorites filters, local favorites and an explicit empty state with recovery. Reference navigation reveals the current shot even after restrictive filters.
-- **Useful controls:** quick save and export from the header; collapsible explanatory notes; mobile settings drawer with keyboard focus containment; keyboard-accessible tabs and scene orbit.
-- **Rendering work:** the secondary 3D scene is not rebuilt/rendered while hidden. Unchanged select options and body comparisons reuse their DOM. Playback pauses when the page is hidden. If WebGL is unavailable, the camera area clearly labels an original recorded motion reference; it does not claim to render edited 3D settings, and frame guides are disabled in that fallback.
+| Section | Basic controls |
+| --- | --- |
+| Movement | Five motion families: dolly, pan, tilt, zoom and orbit. Choose a direction, duration and smooth, steady or accelerating motion. |
+| Frame & lens | Close, medium and wide framing; 24, 50 and 85 mm lens choices; landscape/portrait image shapes and frame guides. |
+| Transitions | Cut, dissolve, wipe and whip; choose the next shot and adjust the overlap. |
+
+**Framing keeps the current movement.** A framing choice adjusts the current camera path and target positions while preserving the selected motion and easing. Pan and tilt keep a stationary camera. These are approximate subject-based compositions; inspect the result for the selected scene and subject.
+
+**Basic lenses keep authored zoom animation.** The 24, 50 and 85 mm choices scale the path's focal-length values so the first frame starts at the selected value. Any authored focal-length change continues through the shot. The full lens library remains available in advanced controls; its fixed prime profiles intentionally use a fixed focal length.
+
+- **Learning beside the preview:** inline definitions, practical uses and tips update with the selected movement, framing or transition. Playback, restart, timeline scrubbing and an expandable focus mode stay beside the actual WebGL camera preview. An optional 3D scene view helps inspect the camera path. Frame guides fit the rendered image rectangle, including portrait shots.
+- **Optional tools:** Scene & model, Export and Help open native dialogs with keyboard focus containment and Escape dismissal. The export dialog puts browser video download first, with local project save and additional formats available below it. Scene selection, bundled models and personal model import remain optional.
+- **Advanced controls on demand:** expandable sections retain the full catalog, 34 timing choices and custom Bézier controls, layered composition, editable keyframes, camera-body comparison, the full optics library, detailed scene settings, all transitions and JSON/OBJ/Blender exports. The studio still includes 302 techniques, 251 editable camera paths and original local reference clips, 97 body records, 81 lens profiles and 35 transitions.
+- **Persian and mobile use:** the bundled Vazirmatn variable font and local SVG icons work offline. The three sections support RTL-aware keyboard navigation and visible focus. Basic settings appear inline on phones; optional tools use the same dialogs.
+- **Full-catalog browsing:** cached motion cards retain focus and scroll when selected; normalized Persian/Arabic letter search, all/3D/favorites filters, local favorites and an explicit empty state support recovery. Reference navigation reveals the current shot even after restrictive filters.
+- **Rendering work:** the secondary 3D scene is not rebuilt/rendered while hidden. Unchanged select options and body comparisons reuse their DOM. Playback pauses when the page is hidden. The preview remains educational previs with the rendering and export limits documented below. If WebGL is unavailable, the camera area clearly labels an original recorded motion reference; it does not claim to render edited 3D settings, and frame guides are disabled in that fallback.
 
 ### Shortcuts
 
@@ -22,7 +33,7 @@ The current homepage opens the unified studio. It keeps the existing 302 techniq
 | G | Toggle frame guides |
 | / | Search the motion library |
 | Ctrl / Command + S | Save the current project in this browser |
-| Escape | Close settings / leave focus |
+| Escape | Close a dialog or menu / leave focus |
 | ? | Show shortcuts |
 
 Single-key shortcuts do not intercept text inputs. Workspace tabs support RTL-aware arrow keys, Home and End. Focused scene canvas supports arrow-key orbit, plus/minus zoom and Home reset.
@@ -31,9 +42,9 @@ Single-key shortcuts do not intercept text inputs. Workspace tabs support RTL-aw
 
 Run `python3 dev_server.py --port 3000` for a local static preview, or open `index.html` directly for normal offline use. No package installation is required. `npm run dev` is an optional wrapper.
 
-`smoke_test.py` is the release gate in GitHub Actions. It checks actual WebGL pixels and transition textures, all 17 imported GLBs, original features and export data, the bundled offline font, cached library focus/scroll, empty search/favorites recovery, RTL tabs, focus/view modes, a 390px mobile layout, mobile settings keyboard behavior, portrait guide bounds and a short laptop viewport. A successful run and Pages deployment are required before calling a release verified.
+`smoke_test.py` is the release gate in GitHub Actions. It checks actual WebGL pixels and transition textures, all 251 local clips and 17 imported GLBs, advanced features and export data, and the beginner movement/framing/lens/transition flow. UI checks cover preserved stationary pan/tilt cameras and timing after reframing, native dialog focus and dismissal, the bundled offline font, cached library focus/scroll, empty search/favorites recovery, three-section RTL navigation, focus/scene views, inline controls at 390px, portrait guide bounds and export access on a short laptop viewport. When MediaRecorder and canvas capture are supported, it also downloads and validates a one-second video. Desktop and mobile screenshots are uploaded as the separate `ui-previews` artifact. A successful run and Pages deployment are required before calling a release verified.
 
-Historical feature notes below describe earlier editions; the sections for v0.6 and v0.7 describe the current studio. Preview and export limitations remain documented with each feature.
+Historical feature notes below describe earlier editions. The v0.8.0 section above describes current navigation; the v0.6 section documents the retained optics, transition and model capabilities. Preview and export limitations remain documented with each feature.
 
 ## Run
 Open `index.html` in a modern browser. No installation, build step, API key or network dependency.
@@ -102,7 +113,7 @@ The homepage is now an entry point for the local atlas, original Camera Lab (`la
 - Nine original procedural low-poly environments: architectural street, soundstage, corridor, mountain forest, snow village, desert/caravanserai, harbor, classical courtyard, interior. Background geometry, directional sky gradient, fog and six lighting palettes (day/golden/overcast/blue/night/clay); optional distant scenery and measurement grid. Four extra procedural subject meshes (coated hero, car, quadruped, statue). Scene geometry is cached by environment/background/grid. Native preview and browser recording use the same scene/timing sampler. OBJ includes vertex colors as an optional widely used extension; Blender script creates colored static geometry, world and sun plus sampled camera animation. Real shadows, DOF, PBR materials, collisions and photorealistic lighting are not simulated. The offline MP4 comparison clips remain schematic renderings, not recordings of the new interactive WebGL sets. Blender execution and browser codec capture are not automatically verified.
 
 ## v0.6 — Unified cinematography workspace
-The site root, former atlas and body-catalog URLs now enter the same studio, preserving query parameters. One preview stays visible on desktop while library, lenses, scene/models, transitions, timing, composer, keyframes and exports are switched in tabs. The old classic simulator and optional online sources remain available by direct link. Frame guides are UI overlays, not baked into video.
+This edition unified the site root, former atlas and body-catalog URLs in the same studio, preserving query parameters. The current v0.8.0 interface groups the learning flow into Movement, Frame & lens and Transitions, with advanced controls in expandable sections and optional tools in dialogs. The old classic simulator and optional online sources remain available by direct link. Frame guides are UI overlays, not baked into video.
 
 **Optics:** 81 selectable profiles (80 lens presets plus authored-path mode) including rectilinear primes (8–800 mm), 13 zoom ranges, anamorphic 1.33/1.5/1.8/2x, macro, approximate fisheye, tilt-shift, soft/vintage/pinhole/probe and radial distortion looks. Horizontal projection genuinely responds to squeeze and sensor width; fixed prime profiles override focal animation, zoom preserves variation within its range. Aperture/focus/CoC yield thin-lens DOF estimates, not rendered physical DOF; distortion, softness, vignette and shift are image-space approximations. Integrated search and comparison of 97 body records preserves nominal/exact width labels.
 
