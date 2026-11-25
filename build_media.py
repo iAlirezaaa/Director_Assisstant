@@ -5,7 +5,13 @@ cv2.setNumThreads(1)
 ROOT=Path(__file__).resolve().parent;OUT=ROOT/'media';OUT.mkdir(exist_ok=True)
 W,H,FPS,N=480,270,24,72
 IDS=["static","dolly-in","dolly-out","fast-dolly","pan-left","pan-right","tilt-up","tilt-down","truck-left","truck-right","pedestal-up","pedestal-down","arc","orbit-180","orbit-360","whip","roll","handheld","leading","following","side-track","pov-walk","double-dolly","parallax","crane-up","crane-down","flyover","drone-reveal","drone-orbit","fpv-dive","low-angle","high-angle","top-down","dutch-angle","eye-level","shoulder-level","hip-level","knee-level","ground-level","worms-eye","aerial-angle","side-90","establishing","extreme-wide","wide","full","medium-wide","medium","medium-close","close","extreme-close","two-shot","three-shot","negative-space","zoom-in","zoom-out","crash-zoom","dolly-zoom","reverse-dolly-zoom","ultra-wide","wide-lens","normal-lens","telephoto","deep-focus","soft-focus","focus-reveal"]
+PATHS=json.loads((ROOT/'motion-paths.json').read_text())
+IDS=IDS+list(PATHS)
 def cam(k,t):
+ if k in PATHS:
+  path=PATHS[k];keys=path['keys'];q=min(max(t,0),1)*(len(keys)-1);j=min(int(q),len(keys)-2);v=q-j;v=v*v*(3-2*v) if path.get('curve')=='smooth' else v
+  kf=np.array(keys[j])*(1-v)+np.array(keys[j+1])*v
+  return kf[:3],kf[3:6],np.array([kf[8],0,kf[9]]),kf[6],kf[7]
  e=t*t*(3-2*t);p=np.array([0.,1.65,-6.]);a=np.array([0.,1.05,0.]);s=np.zeros(3);f=50.;roll=0.
  if k=='dolly-in':p[2]=-7+4*e
  if k=='dolly-out':p[2]=-3-6*e
@@ -66,7 +72,7 @@ def render(k,t):
  people=[s]
  if k in ('two-shot','three-shot'):people=[np.array([-1.,0,0]),np.array([1.,0,0])]+([np.array([0.,0,1.4])] if k=='three-shot' else [])
  for x,y,z in people:
-  step=.1*math.sin(t*math.pi*4) if k in ('leading','following','side-track','double-dolly') else 0
+  step=.1*math.sin(t*math.pi*4) if k in ('leading','following','side-track','double-dolly') or (k in PATHS and np.linalg.norm(s)>.01) else 0
   q,depth=proj([[x,1.63,z],[x,1.35,z],[x,.75,z],[x-.22,1.27,z],[x+.22,1.27,z],[x-.35,.94,z],[x+.35,.94,z],[x-.18,.03,z+step],[x+.18,.03,z-step],[x,1.60,z-.14]])
   if min(depth)<.12:continue
   rad=max(2,min(85,int(scale*.14/depth[0])));q=pts(q)
