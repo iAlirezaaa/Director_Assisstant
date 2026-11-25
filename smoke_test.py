@@ -70,12 +70,14 @@ with sync_playwright() as p:
  page.goto(base+'?lang=en')
  page.wait_for_selector('#techTitle')
  assert '/studio.html' in page.url
- assert '251' in page.locator('#presetsCount').inner_text()
+ assert not errors, errors
+ assert page.evaluate('Object.keys(PATHS).length') == 251
  assert page.locator('#program').is_visible(),page.locator('#status').inner_text()
  assert page.locator('#program').evaluate("""c=>{let gl=c.getContext('webgl');if(!gl)return false;let pix=new Uint8Array(c.width*c.height*4);gl.readPixels(0,0,c.width,c.height,gl.RGBA,gl.UNSIGNED_BYTE,pix);let colors=new Set();for(let i=0;i<pix.length;i+=64)colors.add(pix[i]+','+pix[i+1]+','+pix[i+2]);return colors.size>4&&gl.getError()===0}""")
  # Local reference and direct routing into studio.
  page.goto(base+'references.html?id=helical-rise&lang=en')
  tab('library')
+ assert '251' in page.locator('#presetsCount').inner_text()
  page.wait_for_selector('#libraryTitle')
  assert 'Helical rising orbit' in page.locator('#libraryTitle').inner_text()
  page.locator('#localReference').evaluate("v=>{v.preload='metadata';v.load()}")
@@ -330,6 +332,8 @@ with sync_playwright() as p:
  page.set_viewport_size({'width':390,'height':844})
  page.wait_for_function("matchMedia('(max-width:700px)').matches&&!StudioUI.worldVisible")
  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1&&document.body.scrollWidth<=innerWidth+1'), '390px RTL layout overflows horizontally'
+ assert page.locator('#stagePanel').evaluate('el=>el.getBoundingClientRect().width>=innerWidth-50'), 'Phone preview must stretch to the content width'
+ assert page.locator('.app-header').evaluate("el=>['.brand','.header-actions','#workspaceTabs'].every(s=>{const r=el.querySelector(s).getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1})"), 'Header controls escape the phone viewport'
  section('library')
  page.locator('#beginnerMotionList [data-motion="dolly"]').click()
  page.locator('#motionDirection [data-motion-path="dolly-in"]').click()
@@ -365,7 +369,7 @@ with sync_playwright() as p:
 
  # Reviewable screenshots of the real software-WebGL render; kept outside dist.
  preview_dir=ROOT/'qa-previews';preview_dir.mkdir(exist_ok=True)
- page.set_viewport_size({'width':1440,'height':960})
+ page.set_viewport_size({'width':1672,'height':941})
  page.goto(base+'studio.html?lang=fa&tab=library')
  page.wait_for_function("renderCam&&preview?.compose&&state.instances.some(i=>i.assetId==='person-a')")
  page.evaluate('async()=>{await document.fonts.ready}')
