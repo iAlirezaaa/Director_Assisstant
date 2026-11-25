@@ -19,6 +19,13 @@ on:
       - 'studio.js'
       - 'motion-tools.js'
       - 'scene-library.js'
+      - 'lens-engine.js'
+      - 'transition-engine.js'
+      - 'workspace.js'
+      - 'asset-importer.js'
+      - 'asset-manifest.js'
+      - 'asset-manifest.json'
+      - 'fetch_assets.py'
       - 'models.html'
       - 'lab.html'
       - 'online-references.html'
@@ -48,11 +55,15 @@ jobs:
           python -m pip install numpy opencv-python-headless
       - name: Generate and verify all 251 local MP4 files
         run: python build_media.py
+      - name: Fetch and verify 17 pinned CC0 models
+        run: python fetch_assets.py
       - name: Build portable website
         run: |
-          mkdir -p dist/media
-          cp index.html lab.html references.html online-references.html models.html studio.html studio.js motion-tools.js scene-library.js camera-library.js camera-models.js offline-media.js motion-paths.js motion-paths.json legacy-motion-paths.js README.md build_media.py dist/
+          mkdir -p dist/media dist/assets
+          cp index.html lab.html references.html online-references.html models.html studio.html studio.js motion-tools.js scene-library.js lens-engine.js transition-engine.js workspace.js asset-importer.js asset-manifest.js asset-manifest.json asset-bundle.js fetch_assets.py camera-library.js camera-models.js offline-media.js motion-paths.js motion-paths.json legacy-motion-paths.js README.md build_media.py dist/
           cp media/*.mp4 dist/media/
+          cp assets/*.glb dist/assets/
+          test "$(find dist/assets -name '*.glb' | wc -l)" -eq 17
           touch dist/.nojekyll
           test "$(find dist/media -name '*.mp4' | wc -l)" -eq 251
           (cd dist && zip -qr ../CameraAtlas-Offline.zip .)
@@ -70,14 +81,14 @@ jobs:
           name: CameraAtlas-Offline
           path: CameraAtlas-Offline.zip
           if-no-files-found: error
-      - name: Store generated MP4 files in repository
+      - name: Store verified local video and GLB assets in repository
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- media/*.mp4
+          git add -- media/*.mp4 assets/*.glb asset-bundle.js
           if ! git diff --cached --quiet; then
-            git commit -m "Build 251 original offline camera-reference MP4 files"
+            git commit -m "Bundle verified offline MP4 and licensed GLB assets"
             git push origin HEAD:main
           fi
       - name: Upload Pages artifact
