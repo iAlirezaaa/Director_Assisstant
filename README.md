@@ -37,3 +37,14 @@ Open `references.html` from Camera Lab. It contains 126 individually described c
 
 ### Original motion reference export
 Camera Lab includes a reverse-trajectory control and a clean, silent browser-recorded camera reference export at a nominal 24 fps. The export uses the existing schematic preview without guides; MediaRecorder chooses MP4 or WebM depending on browser support. Keep the tab active during recording. The export is not a true Blender render, and browser timing/codec support is not guaranteed. Reverse atlas links start at the original trajectory endpoint. Data, syntax, UI logic, prompt composition, source links and reverse controls passed mock DOM checks; actual video capture and third-party playback still require real-browser testing.
+
+
+## Offline Edition (v0.3)
+`references.html` now uses only local HTML5 video files. It has all 126 catalog techniques and existing dedicated AI prompts; 66 original schematic MP4 files and 18 explicitly labeled related-motion aliases. No third-party videos have been downloaded or mirrored. Entries without footage accept local personal clips for the current session. The original external-source catalog is preserved separately as `online-references.html`, not loaded by the offline page.
+
+Build the local videos (Python 3, NumPy, OpenCV and FFmpeg with libx264):
+```sh
+python -m pip install numpy opencv-python-headless
+python build_media.py
+```
+Open `references.html` directly with `camera-library.js`, `offline-media.js` and the `media/` folder in the same directory. No remote requests are required. All clips are 480x270 H.264, 24 fps, 3 s, silent; static framing examples hold a static shot. The renderer is an educational previs model, not the original film footage or a full physically correct optics/rig simulation. For a Pages build, package these local assets together. Actual browser playback still needs verification; the local container Chromium blocked file/localhost navigation.
