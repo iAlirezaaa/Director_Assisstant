@@ -297,7 +297,8 @@ window.CAMERA_LIBRARY = {
         }
       ],
       "sim": "push",
-      "note": ""
+      "note": "",
+      "simDuration": 2
     },
     {
       "id": "pan-left",
@@ -320,7 +321,8 @@ window.CAMERA_LIBRARY = {
         }
       ],
       "sim": "pan",
-      "note": ""
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "pan-right",
@@ -381,7 +383,8 @@ window.CAMERA_LIBRARY = {
         }
       ],
       "sim": "tilt",
-      "note": ""
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "truck-left",
@@ -404,7 +407,8 @@ window.CAMERA_LIBRARY = {
         }
       ],
       "sim": "truck",
-      "note": ""
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "truck-right",
@@ -465,7 +469,8 @@ window.CAMERA_LIBRARY = {
         }
       ],
       "sim": "pedestal",
-      "note": ""
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "arc",
@@ -738,8 +743,9 @@ window.CAMERA_LIBRARY = {
           "start": null
         }
       ],
-      "sim": "",
-      "note": ""
+      "sim": "crane",
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "flyover",
@@ -1396,8 +1402,9 @@ window.CAMERA_LIBRARY = {
           "start": 624
         }
       ],
-      "sim": "",
-      "note": ""
+      "sim": "zoom",
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "crash-zoom",
@@ -1453,8 +1460,9 @@ window.CAMERA_LIBRARY = {
           "start": 249
         }
       ],
-      "sim": "",
-      "note": ""
+      "sim": "vertigo",
+      "note": "",
+      "simReverse": true
     },
     {
       "id": "ultra-wide",
