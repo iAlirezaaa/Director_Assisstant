@@ -1,0 +1,79 @@
+name: Build offline video library and deploy site
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/offline-site.yml'
+      - 'build_media.py'
+      - 'index.html'
+      - 'references.html'
+      - 'offline-media.js'
+      - 'camera-library.js'
+
+concurrency:
+  group: camera-atlas-offline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install offline renderer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install numpy opencv-python-headless
+      - name: Generate and verify all 66 local MP4 files
+        run: python build_media.py
+      - name: Build portable website
+        run: |
+          mkdir -p dist/media
+          cp index.html references.html camera-library.js offline-media.js README.md build_media.py dist/
+          cp media/*.mp4 dist/media/
+          touch dist/.nojekyll
+          test "$(find dist/media -name '*.mp4' | wc -l)" -eq 66
+          (cd dist && zip -qr ../CameraAtlas-Offline.zip .)
+      - name: Upload offline website ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: CameraAtlas-Offline
+          path: CameraAtlas-Offline.zip
+          if-no-files-found: error
+      - name: Store generated MP4 files in repository
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- media/*.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m "Build 66 original offline camera-reference MP4 files"
+            git push origin HEAD:main
+          fi
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Publish site
+        id: deployment
+        uses: actions/deploy-pages@v4

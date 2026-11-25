@@ -48,3 +48,6 @@ python -m pip install numpy opencv-python-headless
 python build_media.py
 ```
 Open `references.html` directly with `camera-library.js`, `offline-media.js` and the `media/` folder in the same directory. No remote requests are required. All clips are 480x270 H.264, 24 fps, 3 s, silent; static framing examples hold a static shot. The renderer is an educational previs model, not the original film footage or a full physically correct optics/rig simulation. For a Pages build, package these local assets together. Actual browser playback still needs verification; the local container Chromium blocked file/localhost navigation.
+
+### GitHub Pages and CI
+The `offline-site.yml` workflow renders and verifies MP4 files, produces a portable ZIP artifact, commits the generated files (without force-pushing), then deploys the static site via GitHub Pages. In repository Settings → Pages → Build and deployment, select **GitHub Actions** if Pages is not already configured. Workflow execution, media commit and public Pages availability must be checked in Actions/Pages; adding the workflow alone does not establish that they succeeded.
