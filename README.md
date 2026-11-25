@@ -27,3 +27,10 @@ Movement sampling tested for finite transforms, locked camera, stationary pan/zo
 
 ## License
 No license has been selected yet.
+
+## Camera Atlas (v0.2)
+Open `references.html` from Camera Lab. It contains 126 individually described camera techniques in 12 categories, 16 original YouTube videos and 121 chapter links (some links share the same original video), plus official model guidance and galleries. The dataset is in `camera-library.js`.
+
+- Search English/Persian, category/source filters, favorites stored locally, and one on-demand embedded player with original-source fallback.
+- Per-technique reusable English camera prompt; subject, duration and image/video-reference workflow controls. Compatible moves link back to the existing simulator.
+- Third-party video is embedded from YouTube or linked to the original publisher, not downloaded or redistributed. Source pages may contain demos and text, not individually embedded videos. Embeddability and playback depend on the publisher/browser. The link index and JS syntax were checked; full browser/media playback QA is pending. Do not use third-party footage as model input without appropriate rights. AI camera prompts are guidance, not guaranteed motion.
