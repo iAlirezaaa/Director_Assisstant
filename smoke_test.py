@@ -28,6 +28,7 @@ with sync_playwright() as p:
  page.route('**/*',lambda route:route.continue_() if route.request.url.startswith('http://127.0.0.1:8765/') or route.request.url.startswith('blob:') else route.abort())
  base='http://127.0.0.1:8765/'
  page.goto(base)
+ page.wait_for_selector('#stats .stat')
  assert page.locator('#stats .stat').count()==5
  assert page.locator('#stats').inner_text().find('228')>=0
  page.goto(base+'references.html?id=helical-rise')
@@ -53,7 +54,7 @@ with sync_playwright() as p:
  assert page.locator('#keys button').count()==10
  page.locator('#delete').click()
  assert page.locator('#keys button').count()==9
- page.locator('#height').fill('1.25')
+ page.locator('#height').evaluate("e=>{e.value='1.25';e.dispatchEvent(new Event('input',{bubbles:true}))}")
  page.locator('#scene').select_option('corridor')
  page.locator('#subject').select_option('robot')
  page.locator('#save').click()
