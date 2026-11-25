@@ -3,7 +3,7 @@
 A bilingual Persian/English, dependency-free cinematography learning and previs tool.
 
 
-## v0.8.0 — A guided first shot
+## v0.8.1 — A guided first shot
 
 The homepage opens a six-second shot in the camera view. Three learning sections put the common decisions next to the preview, with short Persian/English explanations of what each choice does, when to use it and what to watch for.
 
@@ -44,7 +44,7 @@ Run `python3 dev_server.py --port 3000` for a local static preview, or open `ind
 
 `smoke_test.py` is the release gate in GitHub Actions. It checks actual WebGL pixels and transition textures, all 251 local clips and 17 imported GLBs, advanced features and export data, and the beginner movement/framing/lens/transition flow. UI checks cover preserved stationary pan/tilt cameras and timing after reframing, native dialog focus and dismissal, the bundled offline font, cached library focus/scroll, empty search/favorites recovery, three-section RTL navigation, focus/scene views, inline controls at 390px, portrait guide bounds and export access on a short laptop viewport. When MediaRecorder and canvas capture are supported, it also downloads and validates a one-second video. Desktop and mobile screenshots are uploaded as the separate `ui-previews` artifact. A successful run and Pages deployment are required before calling a release verified.
 
-Historical feature notes below describe earlier editions. The v0.8.0 section above describes current navigation; the v0.6 section documents the retained optics, transition and model capabilities. Preview and export limitations remain documented with each feature.
+Historical feature notes below describe earlier editions. The v0.8.1 section above describes current navigation; the v0.6 section documents the retained optics, transition and model capabilities. Preview and export limitations remain documented with each feature.
 
 ## Run
 Open `index.html` in a modern browser. No installation, build step, API key or network dependency.
@@ -113,7 +113,7 @@ The homepage is now an entry point for the local atlas, original Camera Lab (`la
 - Nine original procedural low-poly environments: architectural street, soundstage, corridor, mountain forest, snow village, desert/caravanserai, harbor, classical courtyard, interior. Background geometry, directional sky gradient, fog and six lighting palettes (day/golden/overcast/blue/night/clay); optional distant scenery and measurement grid. Four extra procedural subject meshes (coated hero, car, quadruped, statue). Scene geometry is cached by environment/background/grid. Native preview and browser recording use the same scene/timing sampler. OBJ includes vertex colors as an optional widely used extension; Blender script creates colored static geometry, world and sun plus sampled camera animation. Real shadows, DOF, PBR materials, collisions and photorealistic lighting are not simulated. The offline MP4 comparison clips remain schematic renderings, not recordings of the new interactive WebGL sets. Blender execution and browser codec capture are not automatically verified.
 
 ## v0.6 — Unified cinematography workspace
-This edition unified the site root, former atlas and body-catalog URLs in the same studio, preserving query parameters. The current v0.8.0 interface groups the learning flow into Movement, Frame & lens and Transitions, with advanced controls in expandable sections and optional tools in dialogs. The old classic simulator and optional online sources remain available by direct link. Frame guides are UI overlays, not baked into video.
+This edition unified the site root, former atlas and body-catalog URLs in the same studio, preserving query parameters. The current v0.8.1 interface groups the learning flow into Movement, Frame & lens and Transitions, with advanced controls in expandable sections and optional tools in dialogs. The old classic simulator and optional online sources remain available by direct link. Frame guides are UI overlays, not baked into video.
 
 **Optics:** 81 selectable profiles (80 lens presets plus authored-path mode) including rectilinear primes (8–800 mm), 13 zoom ranges, anamorphic 1.33/1.5/1.8/2x, macro, approximate fisheye, tilt-shift, soft/vintage/pinhole/probe and radial distortion looks. Horizontal projection genuinely responds to squeeze and sensor width; fixed prime profiles override focal animation, zoom preserves variation within its range. Aperture/focus/CoC yield thin-lens DOF estimates, not rendered physical DOF; distortion, softness, vignette and shift are image-space approximations. Integrated search and comparison of 97 body records preserves nominal/exact width labels.
 
