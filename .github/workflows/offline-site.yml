@@ -17,6 +17,8 @@ on:
       - 'legacy-motion-paths.js'
       - 'studio.html'
       - 'studio.js'
+      - 'motion-tools.js'
+      - 'scene-library.js'
       - 'models.html'
       - 'lab.html'
       - 'online-references.html'
@@ -44,15 +46,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install numpy opencv-python-headless
-      - name: Generate and verify all 177 local MP4 files
+      - name: Generate and verify all 251 local MP4 files
         run: python build_media.py
       - name: Build portable website
         run: |
           mkdir -p dist/media
-          cp index.html lab.html references.html online-references.html models.html studio.html studio.js camera-library.js camera-models.js offline-media.js motion-paths.js motion-paths.json legacy-motion-paths.js README.md build_media.py dist/
+          cp index.html lab.html references.html online-references.html models.html studio.html studio.js motion-tools.js scene-library.js camera-library.js camera-models.js offline-media.js motion-paths.js motion-paths.json legacy-motion-paths.js README.md build_media.py dist/
           cp media/*.mp4 dist/media/
           touch dist/.nojekyll
-          test "$(find dist/media -name '*.mp4' | wc -l)" -eq 177
+          test "$(find dist/media -name '*.mp4' | wc -l)" -eq 251
           (cd dist && zip -qr ../CameraAtlas-Offline.zip .)
           cp CameraAtlas-Offline.zip dist/CameraAtlas-Offline.zip
       - name: Browser smoke test
@@ -75,7 +77,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- media/*.mp4
           if ! git diff --cached --quiet; then
-            git commit -m "Build 177 original offline camera-reference MP4 files"
+            git commit -m "Build 251 original offline camera-reference MP4 files"
             git push origin HEAD:main
           fi
       - name: Upload Pages artifact

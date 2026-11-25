@@ -7,10 +7,59 @@ W,H,FPS,N=480,270,24,72
 IDS=["static","dolly-in","dolly-out","fast-dolly","pan-left","pan-right","tilt-up","tilt-down","truck-left","truck-right","pedestal-up","pedestal-down","arc","orbit-180","orbit-360","whip","roll","handheld","leading","following","side-track","pov-walk","double-dolly","parallax","crane-up","crane-down","flyover","drone-reveal","drone-orbit","fpv-dive","low-angle","high-angle","top-down","dutch-angle","eye-level","shoulder-level","hip-level","knee-level","ground-level","worms-eye","aerial-angle","side-90","establishing","extreme-wide","wide","full","medium-wide","medium","medium-close","close","extreme-close","two-shot","three-shot","negative-space","zoom-in","zoom-out","crash-zoom","dolly-zoom","reverse-dolly-zoom","ultra-wide","wide-lens","normal-lens","telephoto","deep-focus","soft-focus","focus-reveal"]
 PATHS=json.loads((ROOT/'motion-paths.json').read_text())
 IDS=IDS+list(PATHS)
+def clamp(x,a,b):return max(a,min(b,x))
+def bounce_out(t):
+ n,d=7.5625,2.75
+ if t<1/d:return n*t*t
+ if t<2/d:
+  t-=1.5/d;return n*t*t+.75
+ if t<2.5/d:
+  t-=2.25/d;return n*t*t+.9375
+ t-=2.625/d;return n*t*t+.984375
+def bezier(x,b):
+ x1,y1,x2,y2=b
+ def at(t,a,c):return 3*(1-t)*(1-t)*t*a+3*(1-t)*t*t*c+t*t*t
+ l,h=0.,1.
+ for _ in range(26):
+  m=(l+h)/2
+  if at(m,x1,x2)<x:l=m
+  else:h=m
+ return at((l+h)/2,y1,y2)
+def ease(kind,t,b=(.42,0,.58,1)):
+ t=clamp(t,0,1)
+ if t==0 or t==1 or kind=='linear':return t
+ if kind=='smooth':return t*t*(3-2*t)
+ if kind=='smoother':return t*t*t*(t*(t*6-15)+10)
+ if kind=='custom':return bezier(t,b)
+ name,mode=kind.split('-',1)
+ def f(x):
+  if name=='quad':return x*x
+  if name=='cubic':return x*x*x
+  if name=='quart':return x**4
+  if name=='quint':return x**5
+  if name=='sine':return 1-math.cos(x*math.pi/2)
+  if name=='expo':return 0 if x==0 else 2**(10*x-10)
+  if name=='circ':return 1-math.sqrt(max(0,1-x*x))
+  if name=='back':return 2.70158*x*x*x-1.70158*x*x
+  if name=='elastic':return x if x in (0,1) else -(2**(10*x-10))*math.sin((10*x-10.75)*2*math.pi/3)
+  if name=='bounce':return 1-bounce_out(1-x)
+  return x
+ if mode=='in':return f(t)
+ if mode=='out':return 1-f(1-t)
+ return f(2*t)/2 if t<.5 else 1-f(2-2*t)/2
+def path_key(path,t):
+ keys=path['keys'];n=len(keys)-1;tm=path.get('timing');q=clamp(t,0,1)*n
+ if tm and tm.get('scope')=='shot':q=ease(tm['type'],t,tm.get('bezier',(.42,0,.58,1)))*n
+ j=clamp(math.floor(q),0,n-1);v=q-j
+ if tm and tm.get('scope')=='segment':v=ease(tm['type'],v,tm.get('bezier',(.42,0,.58,1)))
+ elif path.get('curve')=='smooth' and 0<=v<=1:v=ease('smooth',v)
+ kf=np.array(keys[j])*(1-v)+np.array(keys[j+1])*v
+ kf[6]=clamp(kf[6],1,3200)
+ if np.linalg.norm(kf[3:6]-kf[:3])<.0001:kf[3:6]=kf[:3]+np.array(keys[j][3:6])-np.array(keys[j][:3])
+ return kf
 def cam(k,t):
  if k in PATHS:
-  path=PATHS[k];keys=path['keys'];q=min(max(t,0),1)*(len(keys)-1);j=min(int(q),len(keys)-2);v=q-j;v=v*v*(3-2*v) if path.get('curve')=='smooth' else v
-  kf=np.array(keys[j])*(1-v)+np.array(keys[j+1])*v
+  kf=path_key(PATHS[k],t)
   return kf[:3],kf[3:6],np.array([kf[8],0,kf[9]]),kf[6],kf[7]
  e=t*t*(3-2*t);p=np.array([0.,1.65,-6.]);a=np.array([0.,1.05,0.]);s=np.zeros(3);f=50.;roll=0.
  if k=='dolly-in':p[2]=-7+4*e
