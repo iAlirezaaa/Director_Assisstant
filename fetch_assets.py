@@ -1,8 +1,11 @@
 """Fetch pinned CC0 GLB assets, verify Git blob identity and bundle for file:// use."""
-import base64,hashlib,json,struct,urllib.request,time,concurrent.futures
+import base64,hashlib,json,struct,urllib.request,time,concurrent.futures,re
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 M=json.loads((ROOT/'asset-manifest.json').read_text())
+# Reject malformed identity pins before downloading or retrying any assets.
+for label,sha in [('revision',M['revision'])]+[(a['id'],a['sha']) for a in M['assets']]:
+ if not re.fullmatch(r'[0-9a-f]{40}',sha):raise ValueError('Invalid Git SHA for '+label)
 def git_sha(b): return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
 def fetch(a):
  p=ROOT/a['file'];p.parent.mkdir(exist_ok=True)

@@ -1,6 +1,39 @@
-# Director Assistant — Camera Lab
+# Director Assistant — Camera Studio
 
 A bilingual Persian/English, dependency-free cinematography learning and previs tool.
+
+
+## v0.7 — A clearer shot-design workspace
+
+The current homepage opens the unified studio. It keeps the existing 302 techniques, 251 editable camera paths and original local reference clips, 97 body records, 81 lens profiles, 35 transitions, scene tools and exports.
+
+- **Preview and focus:** a clear current-shot heading, dedicated camera/scene/split views, an expandable focus mode, adjacent playback and time ruler, and guides fitted to the actual image rectangle for landscape, scope, square and portrait shots.
+- **Readable Persian UI:** bundled Vazirmatn variable font with its SIL OFL license, RTL-aware layouts, separated bilingual technique names, translated subject/instance controls, consistent fields, visible keyboard focus and a horizontal mobile tool strip.
+- **Faster browsing:** cached motion cards retain focus and scroll when selected; normalized Persian/Arabic letter search, all/3D/favorites filters, local favorites and an explicit empty state with recovery. Reference navigation reveals the current shot even after restrictive filters.
+- **Useful controls:** quick save and export from the header; collapsible explanatory notes; mobile settings drawer with keyboard focus containment; keyboard-accessible tabs and scene orbit.
+- **Rendering work:** the secondary 3D scene is not rebuilt/rendered while hidden. Unchanged select options and body comparisons reuse their DOM. Playback pauses when the page is hidden. If WebGL is unavailable, the camera area clearly labels an original recorded motion reference; it does not claim to render edited 3D settings, and frame guides are disabled in that fallback.
+
+### Shortcuts
+
+| Key | Action |
+| --- | --- |
+| Space | Play / pause |
+| F | Enter / leave focus mode |
+| G | Toggle frame guides |
+| / | Search the motion library |
+| Ctrl / Command + S | Save the current project in this browser |
+| Escape | Close settings / leave focus |
+| ? | Show shortcuts |
+
+Single-key shortcuts do not intercept text inputs. Workspace tabs support RTL-aware arrow keys, Home and End. Focused scene canvas supports arrow-key orbit, plus/minus zoom and Home reset.
+
+### Development and release validation
+
+Run `python3 dev_server.py --port 3000` for a local static preview, or open `index.html` directly for normal offline use. No package installation is required. `npm run dev` is an optional wrapper.
+
+`smoke_test.py` is the release gate in GitHub Actions. It checks actual WebGL pixels and transition textures, all 17 imported GLBs, original features and export data, the bundled offline font, cached library focus/scroll, empty search/favorites recovery, RTL tabs, focus/view modes, a 390px mobile layout, mobile settings keyboard behavior, portrait guide bounds and a short laptop viewport. A successful run and Pages deployment are required before calling a release verified.
+
+Historical feature notes below describe earlier editions; the sections for v0.6 and v0.7 describe the current studio. Preview and export limitations remain documented with each feature.
 
 ## Run
 Open `index.html` in a modern browser. No installation, build step, API key or network dependency.
@@ -10,7 +43,7 @@ python -m http.server 8000
 ```
 Then open http://localhost:8000.
 
-## Features
+## Original Camera Lab features (archived)
 - 15 animated camera movement presets, explanations and warnings.
 - Synchronized perspective camera preview and X-Z overhead movement path with field-of-view cone.
 - 7 shot-size presets, 6 camera-angle presets, 8 rigs, 6 camera body categories.
@@ -19,10 +52,10 @@ Then open http://localhost:8000.
 - English shot prompt and JSON export with 25 sampled keyframes.
 - Search and bilingual field reference.
 
-## Model limitations
+## Original Camera Lab limitations (archived)
 Educational schematic preview, not a photorealistic renderer. Pinhole projection assumes a 36 mm horizontal sensor. No exposure, depth of field, lens distortion, motion blur, collision or physical rig constraints. Shot sizes are approximate presets. Overhead presets start vertically and adapt dolly and pan to the optical axis; tilt, arc and crane can depart from exact vertical. Export is an application JSON format, not FBX or Blender import. Camera body and rig choices are reference metadata; they do not change optical simulation.
 
-## Validation
+## Original Camera Lab validation (archived)
 Movement sampling tested for finite transforms, locked camera, stationary pan/zoom positions, forward dolly, centered projection and overhead target. 480 finite-transform and normalized-axis checks across standard/overhead movement presets passed, plus 23 mock DOM/canvas smoke checks (initial render, language, timeline, play/reset, angle and movement selection). Real browser and visual QA still required.
 
 ## License

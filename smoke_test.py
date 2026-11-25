@@ -18,6 +18,10 @@ assert len(B['models'])==len({x['id'] for x in B['models']})==97
 files={v['file'] for v in M.values() if v};assert len(files)==251 and len(P)+len(L)==251
 assert all((DIST/f).is_file() for f in files)
 assert len(A['assets'])==17
+assert (DIST/'favicon.svg').is_file()
+font=(DIST/'fonts/Vazirmatn.woff2').read_bytes()
+assert font[:4]==b'wOF2' and font==(ROOT/'fonts/Vazirmatn.woff2').read_bytes()
+assert 'SIL OPEN FONT LICENSE Version 1.1' in (DIST/'fonts/OFL.txt').read_text()
 for a in A['assets']:
  b=(DIST/a['file']).read_bytes()
  assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==a['sha']
@@ -105,7 +109,164 @@ with sync_playwright() as p:
  page.goto(base+'models.html?lang=en')
  page.wait_for_selector('#lensType')
  assert 'tab=optics' in page.url
+ # UI regressions use the real rendered interface with all external requests blocked.
+ page.goto(base+'studio.html?lang=fa&tab=library')
+ page.wait_for_selector('#libraryList [data-technique-id="orbit-180"]')
+ assert page.locator('html').get_attribute('dir')=='rtl'
+ assert page.evaluate("""async()=>{
+  const faces=await document.fonts.load('400 16px Vazirmatn','پچژگکی فارسی');
+  await document.fonts.ready;
+  return faces.length>0&&faces.every(f=>f.family==='Vazirmatn'&&f.status==='loaded')
+   &&getComputedStyle(document.body).fontFamily.includes('Vazirmatn');
+ }"""), 'The bundled Persian font must actually load while external requests are blocked'
+
+ # Choosing a card must preserve that DOM node, keyboard focus and list position.
+ card=page.locator('#libraryList [data-technique-id="orbit-180"]')
+ card.scroll_into_view_if_needed();card.focus()
+ card_node=card.element_handle()
+ list_scroll=page.locator('#libraryList').evaluate('(el)=>el.scrollTop')
+ card.press('Enter')
+ assert page.evaluate('state.id')=='orbit-180'
+ assert card_node.evaluate("el=>el.isConnected&&document.activeElement===el&&el.getAttribute('aria-pressed')==='true'"), 'Selection replaced the card or lost its focus'
+ assert abs(page.locator('#libraryList').evaluate('(el)=>el.scrollTop')-list_scroll)<=1
+ card_node.dispose()
+
+ # Empty search and an emptied favorites list both have a visible recovery action.
+ page.locator('#libraryQuery').fill('no-such-technique-4823')
+ assert page.locator('#libraryEmpty').is_visible()
+ assert page.locator('#referenceDetail').is_hidden()
+ page.locator('#clearLibrary').click()
+ assert page.locator('#libraryQuery').input_value()==''
+ assert page.locator('#libraryQuery').evaluate('(el)=>el===document.activeElement')
+ assert page.locator('#libraryList [data-technique-id]').count()==302
+ page.locator('#favoriteTechnique').click()
+ favorite_id=page.evaluate('selectedTechnique')
+ page.locator('[data-library-filter="favorites"]').click()
+ assert page.locator('#libraryList [data-technique-id]').count()==1
+ assert page.locator('#libraryList [data-technique-id]').get_attribute('data-technique-id')==favorite_id
+ assert favorite_id in page.evaluate("JSON.parse(localStorage.getItem('camera-studio-favorites'))")
+ page.locator('#favoriteTechnique').click()
+ assert page.locator('#libraryEmpty').is_visible() and page.locator('#referenceDetail').is_hidden()
+ page.locator('#clearLibrary').click()
+ assert page.locator('#libraryList [data-technique-id]').count()==302
+ assert page.locator('[data-library-filter="all"]').get_attribute('aria-pressed')=='true'
+
+ # RTL arrow-key direction and roving tab focus must agree with the visible panel.
+ page.locator('#tab-library').focus();page.keyboard.press('ArrowLeft')
+ assert page.locator('#tab-scene').evaluate("el=>el===document.activeElement&&el.tabIndex===0&&el.getAttribute('aria-selected')==='true'")
+ assert page.locator('#panel-scene').is_visible() and page.locator('#panel-library').is_hidden()
+ page.keyboard.press('ArrowRight')
+ assert page.locator('#tab-library').evaluate('(el)=>el===document.activeElement')
+ page.keyboard.press('End')
+ assert page.locator('#tab-export').evaluate('(el)=>el===document.activeElement')
+ assert page.locator('#panel-export').is_visible()
+ page.keyboard.press('Home')
+ assert page.locator('#tab-library').evaluate('(el)=>el===document.activeElement')
+ assert page.locator('[role="tab"][tabindex="0"]').count()==1
+
+ # Focus and preview layouts preserve the working shot while skipping a hidden world view.
+ page.locator('#time').evaluate("e=>{e.value='.37';e.dispatchEvent(new Event('input',{bubbles:true}))}")
+ shot_before=page.evaluate('({id:state.id,t:state.t,keys:path.keys.length})')
+ page.locator('button[data-view="camera"]').click()
+ assert page.evaluate('StudioUI.worldVisible') is False and page.locator('#worldMonitor').is_hidden()
+ page.locator('#focusMode').click()
+ assert page.locator('#focusMode').get_attribute('aria-pressed')=='true'
+ assert page.locator('#workspaceTabs').is_hidden() and page.locator('#shotInspector').is_hidden()
+ assert page.locator('#program').is_visible()
+ assert page.evaluate('({id:state.id,t:state.t,keys:path.keys.length})')==shot_before
+ page.keyboard.press('Escape')
+ assert page.locator('#workspaceTabs').is_visible()
+ page.locator('button[data-view="scene"]').click()
+ assert page.evaluate('StudioUI.worldVisible') is True and page.locator('#worldMonitor').is_visible()
+ assert page.locator('.camera-monitor').is_hidden()
+ page.locator('button[data-view="split"]').click()
+ assert page.locator('#worldMonitor').is_visible() and page.locator('.camera-monitor').is_visible()
+ assert page.evaluate('({id:state.id,t:state.t,keys:path.keys.length})')==shot_before
+
+ # Reference navigation clears restrictive filters and leaves focus mode.
+ page.locator('#libraryQuery').fill('Dolly zoom')
+ assert page.locator('#libraryList [data-technique-id="orbit-180"]').count()==0
+ page.locator('#focusMode').click()
+ assert page.locator('#workspaceTabs').is_hidden()
+ page.locator('#showReference').click()
+ assert page.locator('#focusMode').get_attribute('aria-pressed')=='false'
+ assert page.locator('#panel-library').is_visible()
+ assert page.locator('#libraryQuery').input_value()==''
+ assert page.evaluate('selectedTechnique===state.id&&activeTab==="library"')
+ assert page.locator('#libraryList [data-technique-id="orbit-180"]').get_attribute('aria-pressed')=='true'
+ assert page.evaluate('({id:state.id,t:state.t,keys:path.keys.length})')==shot_before
+
+ # At phone width, split becomes camera-only and settings remain keyboard accessible.
+ page.set_viewport_size({'width':390,'height':844})
+ page.wait_for_function("matchMedia('(max-width:700px)').matches&&!StudioUI.worldVisible")
+ assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1&&document.body.scrollWidth<=innerWidth+1'), '390px RTL layout overflows horizontally'
+ assert page.locator('#shotInspector').is_hidden()
+ page.locator('#focusMode').click()
+ assert page.locator('#focusMode').get_attribute('aria-pressed')=='true'
+ page.locator('#toggleInspector').click()
+ assert page.locator('#focusMode').get_attribute('aria-pressed')=='false', 'Opening mobile settings must leave focus mode'
+ assert page.locator('#toggleInspector').get_attribute('aria-expanded')=='true'
+ assert page.locator('#shotInspector').is_visible() and page.locator('#inspectorBackdrop').is_visible()
+ assert page.locator('#closeInspector').evaluate('(el)=>el===document.activeElement')
+ page.keyboard.press('Shift+Tab')
+ assert page.evaluate("""()=>{const fields=[...document.querySelectorAll('#shotInspector button,#shotInspector input,#shotInspector select,#shotInspector summary,#shotInspector a[href]')].filter(el=>!el.disabled&&el.getClientRects().length);return document.activeElement===fields.at(-1)}"""), 'Drawer focus escaped backward'
+ page.keyboard.press('Tab')
+ assert page.locator('#closeInspector').evaluate('(el)=>el===document.activeElement'), 'Drawer focus escaped forward'
+ page.locator('#ratio').select_option('9:16')
+ assert page.evaluate('state.ratio')=='9:16'
+ page.keyboard.press('Escape')
+ assert page.locator('#shotInspector').is_hidden() and page.locator('#inspectorBackdrop').is_hidden()
+ assert page.locator('#toggleInspector').evaluate('(el)=>el===document.activeElement')
+ assert page.locator('#toggleInspector').get_attribute('aria-expanded')=='false'
+
+ # Guides fit the visible portrait image, not the full letterboxed monitor.
+ page.locator('#frameGuides').check()
+ page.wait_for_function("""()=>{
+  const box=document.getElementById('cameraView'),canvas=document.getElementById('program'),guide=document.getElementById('guidesOverlay');
+  const b=box.getBoundingClientRect(),g=guide.getBoundingClientRect(),ratio=canvas.width/canvas.height;
+  const width=Math.min(box.clientWidth,box.clientHeight*ratio),height=width/ratio;
+  return !guide.hidden&&g.width>0&&g.height>0&&Math.abs(g.width-width)<2&&Math.abs(g.height-height)<2
+   &&Math.abs(g.width/g.height-9/16)<.002&&Math.abs((g.left+g.right)-(b.left+b.right))<2
+   &&Math.abs((g.top+g.bottom)-(b.top+b.bottom))<2;
+ }""",timeout=10000)
+ assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+ tab('optics')
+ page.locator('#focalMM').fill('35');page.locator('#focalMM').press('Tab')
+ assert abs(page.evaluate('sample(0).focal')-35)<.01
+
+ # A short laptop may scroll, but the active tool panel and its controls stay usable.
+ page.set_viewport_size({'width':1366,'height':660})
+ page.wait_for_function("!matchMedia('(max-width:980px)').matches&&StudioUI.worldVisible")
+ tab('export')
+ assert page.locator('#panel-export').evaluate('(el)=>el.clientHeight>=100')
+ page.locator('#load').scroll_into_view_if_needed()
+ page.locator('#load').click(trial=True)
+ assert page.locator('#load').evaluate("el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&r.left>=0&&r.right<=innerWidth+1}"), 'Export controls are outside the reachable laptop viewport'
+ assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
  page.goto(base+'lab.html');assert page.locator('#view').count()==1
+
+ # Reviewable screenshots of the real software-WebGL render; kept outside dist.
+ preview_dir=ROOT/'qa-previews';preview_dir.mkdir(exist_ok=True)
+ page.set_viewport_size({'width':1440,'height':960})
+ page.goto(base+'studio.html?lang=fa&tab=library')
+ page.wait_for_function("renderCam&&renderWorld&&preview?.compose&&state.instances.some(i=>i.assetId==='person-a')")
+ page.evaluate('async()=>{await document.fonts.ready}')
+ page.locator('#localReference').evaluate("v=>{v.preload='auto';v.load()}")
+ page.wait_for_function("document.getElementById('localReference').readyState>=2")
+ page.wait_for_function("""()=>{
+  const c=document.getElementById('program'),gl=c.getContext('webgl');
+  if(!gl)return false;
+  const pixels=new Uint8Array(c.width*c.height*4),colors=new Set();
+  gl.readPixels(0,0,c.width,c.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+  for(let i=0;i<pixels.length;i+=64)colors.add(pixels[i]+','+pixels[i+1]+','+pixels[i+2]);
+  return colors.size>4&&gl.getError()===0;
+ }""")
+ page.evaluate('window.scrollTo(0,0)')
+ page.screenshot(path=str(preview_dir/'desktop-fa.png'),animations='disabled')
+ page.set_viewport_size({'width':390,'height':844})
+ page.wait_for_function("matchMedia('(max-width:700px)').matches&&!StudioUI.worldVisible")
+ page.evaluate('window.scrollTo(0,0)')
+ page.screenshot(path=str(preview_dir/'mobile-fa.png'),animations='disabled')
  assert not errors,errors
  browser.close()
- print('PASS: unified entry, local references, 81 lens profiles, 35 transition shader branches, 17 actual GLBs, user OBJ, timing, composer, keyframes, models, JSON/OBJ/Blender syntax.')
+ print('PASS: unified entry, local references, 81 lens profiles, 35 transition shader branches, 17 actual GLBs, user OBJ, timing, composer, keyframes, models, JSON/OBJ/Blender syntax, offline font, cached/focused cards, search/favorites recovery, RTL keyboard tabs, focus/view modes, mobile drawer, portrait guides, short-laptop controls.')
