@@ -24,6 +24,11 @@ The homepage opens a six-second shot in the camera view. Three learning sections
 - **Full-catalog browsing:** cached motion cards retain focus and scroll when selected; normalized Persian/Arabic letter search, all/3D/favorites filters, local favorites and an explicit empty state support recovery. Reference navigation reveals the current shot even after restrictive filters.
 - **Rendering work:** the secondary 3D scene is not rebuilt/rendered while hidden. Unchanged select options and body comparisons reuse their DOM. Playback pauses when the page is hidden. The preview remains educational previs with the rendering and export limits documented below. If WebGL is unavailable, the camera area clearly labels an original recorded motion reference; it does not claim to render edited 3D settings, and frame guides are disabled in that fallback.
 
+### راهنمای فارسی برای شروع
+
+- [حرکت دوربین؛ کی پن کنیم، کی دالی برویم و کی زوم کنیم؟](https://ialirezaaa.github.io/fa/blog/notes/cinema/camera-movements/) این راهنما کمک می‌کند تا قبل از کار با ابزار، فرق حرکت دوربین و تغییر فاصلهٔ کانونی را ببینید.
+- [اول جای دوربین را عوض کنیم یا لنز را؟](https://ialirezaaa.github.io/fa/blog/notes/cinema/camera-position-before-lens/) با یک تمرین ساده ببینید چرا دو قاب با اندازهٔ یکسانِ سوژه می‌توانند حس عمق متفاوتی داشته باشند.
+
 ### Shortcuts
 
 | Key | Action |
